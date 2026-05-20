@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Health Digital Twin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                ENV-HEALTH TWIN Engine v1.0
+            </h1>
+        </div>
+        <div class="text-xs font-mono px-3 py-1 bg-slate-800 border border-slate-700 rounded text-slate-400">
+            System State: <span class="text-emerald-400">ONLINE</span>
+        </div>
+    </header>
+
+    <!-- Core App Workspace Layout -->
+    <main class="p-6 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Controls Sidebar -->
+        <section class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 flex flex-col gap-6">
+            <div>
+                <h2 class="text-md font-semibold text-slate-200 uppercase tracking-wider mb-1">Twin Controls</h2>
+                <p class="text-xs text-slate-400">Adjust active variables to feed live data vectors to the ML engine.</p>
+            </div>
+
+            <!-- Dynamic Input Ranges -->
+            <div class="space-y-4">
+                <div>
+                    <label class="flex justify-between text-xs font-mono mb-1 text-slate-300">
+                        <span>Air Quality Index (AQI)</span>
+                        <span id="aqi-val" class="text-cyan-400 font-bold">120</span>
+                    </label>
+                    <input type="range" id="aqi" min="10" max="450" value="120" class="w-full accent-cyan-500 bg-slate-800">
+                </div>
+
+                <div>
+                    <label class="flex justify-between text-xs font-mono mb-1 text-slate-300">
+                        <span>Traffic Grid Density</span>
+                        <span id="traffic-val" class="text-cyan-400 font-bold">45%</span>
+                    </label>
+                    <input type="range" id="traffic" min="0" max="100" value="45" class="w-full accent-cyan-500 bg-slate-800">
+                </div>
+
+                <div>
+                    <label class="flex justify-between text-xs font-mono mb-1 text-slate-300">
+                        <span>Sanitation / Waste Reports</span>
+                        <span id="waste-val" class="text-cyan-400 font-bold">8</span>
+                    </label>
+                    <input type="range" id="waste" min="0" max="50" value="8" class="w-full accent-cyan-500 bg-slate-800">
+                </div>
+
+                <div>
+                    <label class="flex justify-between text-xs font-mono mb-1 text-slate-300">
+                        <span>Water Contamination Metric</span>
+                        <span id="water-val" class="text-cyan-400 font-bold">22</span>
+                    </label>
+                    <input type="range" id="water" min="0" max="100" value="22" class="w-full accent-cyan-500 bg-slate-800">
+                </div>
+            </div>
+
+            <button onclick="triggerEngineInference()" class="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-slate-950 font-bold rounded-lg tracking-wide transition shadow-lg shadow-emerald-500/10">
+                Execute Model Inference
+            </button>
+        </section>
+
+        <!-- Main Display Data Viewports -->
+        <section class="lg:col-span-3 flex flex-col gap-6">
+            
+            <!-- Real-time Predictive Metrics Metrics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-900/40 border border-slate-800/80 p-5 rounded-xl">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Composite Health Risk</p>
+                    <div class="flex items-baseline gap-2">
+                        <span id="card-risk" class="text-3xl font-extrabold tracking-tight text-emerald-400">--</span>
+                        <span class="text-sm font-mono text-slate-500">% index</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/40 border border-slate-800/80 p-5 rounded-xl">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Respiratory Outbreak Vector</p>
+                    <div class="flex items-baseline gap-2">
+                        <span id="card-resp" class="text-3xl font-extrabold tracking-tight text-cyan-400">--</span>
+                        <span class="text-sm font-mono text-slate-500">probability</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/40 border border-slate-800/80 p-5 rounded-xl">
+                    <p class="text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Waterborne Contagion Index</p>
+                    <div class="flex items-baseline gap-2">
+                        <span id="card-water" class="text-3xl font-extrabold tracking-tight text-amber-500">--</span>
+                        <span class="text-sm font-mono text-slate-500">severity</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spatial Grid Map & Log Pipeline Output -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Simple Spatial Matrix Visual Map Overlay -->
+                <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-xl flex flex-col">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Spatial Area Hotspot Map</h3>
+                    <div class="grid grid-cols-3 gap-2 flex-grow min-h-[220px]">
+                        <div id="zone-1" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Alpha</span><span class="val font-bold mt-1"></span>
+                        </div>
+                        <div id="zone-2" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Beta</span><span class="val font-bold mt-1"></span>
+                        </div>
+                        <div id="zone-3" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Gamma</span><span class="val font-bold mt-1"></span>
+                        </div>
+                        <div id="zone-4" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Delta</span><span class="val font-bold mt-1"></span>
+                        </div>
+                        <div id="zone-5" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Epsilon</span><span class="val font-bold mt-1"></span>
+                        </div>
+                        <div id="zone-6" class="border border-slate-800 bg-slate-900/50 rounded flex flex-col justify-center items-center text-xs p-2 font-mono transition-all duration-300">
+                            <span>Zone Sigma</span><span class="val font-bold mt-1"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Log Feed Output Pipeline -->
+                <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-xl flex flex-col">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Live Pipeline Execution Feed</h3>
+                    <div id="pipeline-logs" class="bg-slate-950 border border-slate-800 p-3 rounded font-mono text-xs text-emerald-400 h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                        <div>[SYSTEM] Ingestion parameters instantiated successfully.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Execution JavaScript Engine -->
+    <script>
+        // Track variable modifications visually in UI instantly
+        const tracks = ['aqi', 'traffic', 'waste', 'water'];
+        tracks.forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', (e) => {
+                document.getElementById(`${id}-val`).innerText = e.target.value + (id === 'traffic' ? '%' : '');
+            });
+        });
+
+        function writePipelineLog(text) {
+            const feed = document.getElementById('pipeline-logs');
+            const logLine = document.createElement('div');
+            logLine.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+            feed.appendChild(logLine);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        async function triggerEngineInference() {
+            writePipelineLog("Aggregating multimodal data streams...");
+            
+            const payload = {
+                aqi: parseFloat(document.getElementById('aqi').value),
+                traffic: parseFloat(document.getElementById('traffic').value),
+                waste_complaints: parseFloat(document.getElementById('waste').value),
+                water_contamination: parseFloat(document.getElementById('water').value)
+            };
+
+            try {
+                writePipelineLog("Dispatching normalized feature vector to ML model server...");
+                const response = await fetch('http://127.0.0.1:8000/api/predict-risk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if(data.status === 'success') {
+                    writePipelineLog(`Inference complete. Risk Matrix evaluated: ${data.composite_health_risk}%`);
+                    
+                    // Animate card interfaces accurately
+                    document.getElementById('card-risk').innerText = data.composite_health_risk;
+                    document.getElementById('card-resp').innerText = data.vectors.respiratory_outbreak_probability + "%";
+                    document.getElementById('card-water').innerText = data.vectors.waterborne_disease_index + "%";
+
+                    // Update UI color state according to threat metrics
+                    const cardRiskEl = document.getElementById('card-risk');
+                    if (data.composite_health_risk > 65) {
+                        cardRiskEl.className = "text-3xl font-extrabold tracking-tight text-red-500 animate-pulse";
+                    } else if (data.composite_health_risk > 35) {
+                        cardRiskEl.className = "text-3xl font-extrabold tracking-tight text-amber-400";
+                    } else {
+                        cardRiskEl.className = "text-3xl font-extrabold tracking-tight text-emerald-400";
+                    }
+
+                    // Dynamically fill out spatial heatmap cells with scaled danger colors
+                    for(let i = 1; i <= 6; i++) {
+                        const cell = document.getElementById(`zone-${i}`);
+                        // Create slightly offset variations per zone for visual presentation realism
+                        const regionalRisk = Math.min(Math.max(data.composite_health_risk + (i * 4 - 12), 0), 100).toFixed(1);
+                        cell.querySelector('.val').innerText = `${regionalRisk}%`;
+                        
+                        if(regionalRisk > 70) {
+                            cell.style.background = 'rgba(239, 68, 68, 0.2)';
+                            cell.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                        } else if (regionalRisk > 40) {
+                            cell.style.background = 'rgba(245, 158, 11, 0.15)';
+                            cell.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                        } else {
+                            cell.style.background = 'rgba(16, 185, 129, 0.1)';
+                            cell.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                        }
+                    }
+                }
+            } catch (error) {
+                writePipelineLog("CRITICAL ERROR: Connection to inference server timed out. Check local port 8000.");
+                console.error(error);
+            }
+        }
+
+        // Run an early default calculation automatically on screen render
+        window.onload = () => { setTimeout(triggerEngineInference, 600); };
+    </script>
+</body>
+</html>
